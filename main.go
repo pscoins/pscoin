@@ -8,6 +8,8 @@ import (
 	"github.com/Sirupsen/logrus"
 
 	"pscoin/src/server"
+	"pscoin/src/p2p"
+	"flag"
 )
 
 var (
@@ -36,7 +38,27 @@ func main() {
 
 	defer handlePanic()
 
+	initBlockchain()
+
 	server.StartServer(PORT, log)
+}
+
+func initBlockchain() {
+	sourcePort := flag.Int("sp", 0, "Source port number")
+	dest := flag.String("d", "", "Dest MultiAddr String")
+	help := flag.Bool("help", false, "Display Help")
+	//debug := flag.Bool("debug", true, "Debug generated same node id on every execution.")
+
+	flag.Parse()
+
+	if *help {
+		fmt.Printf("This program demonstrates a simple p2p chat application using libp2p\n\n")
+		fmt.Printf("Usage: Run './chat -sp <SOURCE_PORT>' where <SOURCE_PORT> can be any port number. Now run './chat -d <MULTIADDR>' where <MULTIADDR> is multiaddress of previous listener host.\n")
+
+		os.Exit(0)
+	}
+
+	p2p.InitP2p(dest,sourcePort)
 }
 
 func handlePanic() {
