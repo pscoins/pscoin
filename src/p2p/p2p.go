@@ -6,11 +6,14 @@ import (
 
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p"
+	"github.com/Sirupsen/logrus"
 )
 
 const messageId = 0
 
 type Message string
+
+var log *logrus.Entry = logrus.WithField("package", "p2p")
 
 func MyProtocol() p2p.Protocol {
 	return p2p.Protocol{
@@ -49,14 +52,18 @@ func msgHandler(peer *p2p.Peer, ws p2p.MsgReadWriter) error {
 	return nil
 }
 
-func InitP2p(dest *string, sourcePort *int) {
+func InitP2p(dest string, sourcePort int) {
+
+	strCon := fmt.Sprintf("%s:%d", dest, sourcePort)
+	log.Info("Starting P2P ", strCon)
+
 	nodekey, _ := crypto.GenerateKey()
 	srv := p2p.Server{
-			Config: p2p.Config{
+		Config: p2p.Config{
 			MaxPeers:   10,
 			PrivateKey: nodekey,
 			Name:       "my node name",
-			ListenAddr: ":30300",
+			ListenAddr: strCon,
 			Protocols:  []p2p.Protocol{MyProtocol()},
 		},
 	}
