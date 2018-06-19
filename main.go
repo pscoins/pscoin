@@ -46,6 +46,11 @@ func main() {
 func initBlockchain() {
 	port := flag.Int("port", 30300, "Port")
 	host := flag.String("host", "0.0.0.0", "Host")
+
+	peerPort := flag.Int("peerport", 0, "Peer Port")
+	peerHost := flag.String("peerhost", "0.0.0.0", "Peer Host")
+	peerID := flag.String("peerid", "1", "Peer Host")
+
 	help := flag.Bool("help", false, "Display Help")
 
 	flag.Parse()
@@ -57,7 +62,12 @@ func initBlockchain() {
 		os.Exit(0)
 	}
 
-	p2p.InitP2p(*host, *port)
+	p2p.InitP2PServer(*host, *port)
+
+	if *peerPort > 0 {
+		peers := p2p.GetPeers(*peerID, *peerHost, *peerPort)
+		p2p.InitP2PPeers(peers)
+	}
 }
 
 func handlePanic() {
