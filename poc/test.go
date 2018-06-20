@@ -6,19 +6,18 @@ import (
 	"fmt"
 	"net"
 	"os"
-	"sync"
-
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/rpc"
 
 	"github.com/Sirupsen/logrus"
+	"time"
 )
 
 var (
-	protoW                 = &sync.WaitGroup{}
-	messageW               = &sync.WaitGroup{}
+	//protoW                 = &sync.WaitGroup{}
+	//messageW               = &sync.WaitGroup{}
 	msgC                   = make(chan string)
 	ipcpath                = ".demo.ipc"
 	log      *logrus.Entry = logrus.WithField("package", "p2p")
@@ -42,25 +41,67 @@ var (
 		Run: func(p *p2p.Peer, rw p2p.MsgReadWriter) error {
 
 			// only one of the peers will send this
-			content, ok := <-msgC
-			if ok {
-				outmsg := &FooMsg{
-					Content: content,
-				}
 
-				// send the message
-				err := p2p.Send(rw, 0, outmsg)
-				if err != nil {
-					return fmt.Errorf("Send p2p message fail: %v", err)
+			go func (){
+
+			for {
+				select {
+				case content, ok := <-msgC:
+					if ok {
+						outmsg := &FooMsg{
+							Content: content,
+						}
+
+						// send the message
+						log.WithField("peer", p).WithField("msg", outmsg).Info("p2p.Send, sending message")
+
+						err := p2p.Send(rw, 0, outmsg)
+						if err != nil {
+							log.WithField("peer", p).WithField("msg", outmsg).WithError(err).Error("p2p.Send, Could not send message")
+							//return fmt.Errorf("send p2p message fail: %v", err)
+						}
+					} else {
+						log.WithField("peer", p).Error("p2p.Send, Could not send message")
+						//return fmt.Errorf("send p2p message fail: %v")
+					}
 				}
-				log.Info("sending message", "peer", p, "msg", outmsg)
 			}
+			}()
 
-			// wait for the subscriptions to end
-			messageW.Wait()
-			protoW.Done()
+			//go func(){
 
-			// terminate the protocol
+			for {
+				msg, err := rw.ReadMsg()
+				if err != nil {
+					log.WithError(err).Error("GOT ERROR")
+				}
+
+				var myMessage FooMsg
+				err = msg.Decode(&myMessage)
+				if err != nil {
+					log.WithError(err).Error("GOT ERROR")
+				}
+
+				switch myMessage.Content {
+				case "foobar":
+					log.Info("AEEEEEEEEEEEEEEEEEEEEEE!!!!!!!!!!!!!!!!!!!!!!!!!!")
+					//err := p2p.SendItems(rw, messageId, "bar")
+					if err != nil {
+						log.WithError(err).Error("GOT ERROR")
+					}
+					continue
+				default:
+					fmt.Println("GOT WEIRD MSG!!!!!!!!!!!!!!!!!!!!:", myMessage)
+					continue
+				}
+			}
+			//}()
+
+			//// wait for the subscriptions to end
+			//messageW.Wait()
+			//protoW.Done()
+
+			log.Info("terminate the protocol ??")
 			return nil
 		},
 	}
@@ -71,12 +112,13 @@ type FooAPI struct {
 }
 
 func (api *FooAPI) SendMsg(content string) error {
-	if api.sent {
-		return fmt.Errorf("Already sent")
-	}
+	log.Info("SendMsg, ", content)
+	//if api.sent {
+	//	return fmt.Errorf("Already sent")
+	//}
 	msgC <- content
-	close(msgC)
-	api.sent = true
+	//close(msgC)
+	//api.sent = true
 	return nil
 }
 
@@ -126,6 +168,10 @@ func newRPCServer() (*rpc.Server, error) {
 	return rpcsrv, nil
 }
 
+func init(){
+	os.Remove(ipcpath)
+}
+
 func main() {
 
 	// we need private keys for both servers
@@ -160,10 +206,13 @@ func main() {
 			select {
 			case peerevent := <-eventOneC:
 				if peerevent.Type == "add" {
-					log.Info("Received peer add notification on node #1", "peer", peerevent.Peer)
+					log.WithField("Type",peerevent.Type).WithField("Peer", peerevent.Peer).WithField("node",1).Info("Received peer add notification")
 				} else if peerevent.Type == "msgsend" {
-					log.Info("Received message send notification on node #1", "event", peerevent)
-					messageW.Done()
+					log.WithField("Type",peerevent.Type).WithField("Event", peerevent).WithField("node", 1).Info("Received message send notification")
+				} else if peerevent.Type == "drop" {
+					log.WithField("Type",peerevent.Type).WithField("Event", peerevent).WithField("node",1).Error("Received DROP message")
+				} else {
+					log.WithField("Type",peerevent.Type).WithField("Event", peerevent).WithField("node",1).Info("Received message")
 				}
 			case <-sub_one.Err():
 				return
@@ -178,10 +227,13 @@ func main() {
 			select {
 			case peerevent := <-eventTwoC:
 				if peerevent.Type == "add" {
-					log.Info("Received peer add notification on node #2", "peer", peerevent.Peer)
+					log.WithField("Type",peerevent.Type).WithField("Peer", peerevent.Peer).WithField("node",2).Info("Received peer add notification")
 				} else if peerevent.Type == "msgsend" {
-					log.Info("Received message send notification on node #2", "event", peerevent)
-					messageW.Done()
+					log.WithField("Type",peerevent.Type).WithField("Event", peerevent).WithField("node",2).Info("Received message send notification")
+				} else if peerevent.Type == "drop" {
+					log.WithField("Type",peerevent.Type).WithField("Event", peerevent).WithField("node",2).Error("Received DROP message")
+				} else {
+					log.WithField("Type",peerevent.Type).WithField("Event", peerevent).WithField("node",2).Info("Received message")
 				}
 			case <-sub_two.Err():
 				return
@@ -209,25 +261,38 @@ func main() {
 		log.Error("IPC dial fail", "err", err)
 	}
 
-	// wait for one message be sent, and both protocols to end
-	messageW.Add(1)
-	protoW.Add(2)
+	defer rpcsrv.Stop()
+	//// wait for one message be sent, and both protocols to end
+	//messageW.Add(1)
+	//protoW.Add(2)
 
 	// call the RPC method
-	err = rpcclient.Call(nil, "foo_sendMsg", "foobar")
-	if err != nil {
-		log.Error("RPC call fail", "err", err)
-	}
+	go func() {
+		for {
+			<-time.After(5 * time.Second)
+			go func() {
+				// call the RPC method
+				err = rpcclient.Call(nil, "foo_sendMsg", "foobar")
+				if err != nil {
+					log.WithError(err).Error("RPC call fail")
+					return
+				}
+			}()
+		}
+	}()
 
-	// wait for protocols to finish
-	protoW.Wait()
-
-	// terminate subscription loops and unsubscribe
-	sub_one.Unsubscribe()
-	sub_two.Unsubscribe()
+	//// wait for protocols to finish
+	//protoW.Wait()
+	//
+	//// terminate subscription loops and unsubscribe
+	//sub_one.Unsubscribe()
+	//sub_two.Unsubscribe()
 
 	// stop the servers
-	rpcsrv.Stop()
-	srv_one.Stop()
-	srv_two.Stop()
+
+	//srv_one.Stop()
+	//srv_two.Stop()
+
+	select  {}
+
 }
