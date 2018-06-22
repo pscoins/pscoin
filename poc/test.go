@@ -251,6 +251,9 @@ func main() {
 	// get the node instance of the second server
 	node_two := srv_two.Self()
 
+
+	log.Info("Node", node_two)
+
 	// add it as a peer to the first node
 	// the connection and crypto handshake will be performed automatically
 	srv_one.AddPeer(node_two)
@@ -273,6 +276,9 @@ func main() {
 			go func() {
 				// call the RPC method
 				err = rpcclient.Call(nil, "foo_sendMsg", "foobar")
+				log.WithField("node", 1).WithField("Peers", srv_one.PeerCount()).Info("PEER INFO ")
+				log.WithField("node", 2).WithField("Peers",srv_two.PeerCount()).Info("PEER INFO ")
+
 				if err != nil {
 					log.WithError(err).Error("RPC call fail")
 					return

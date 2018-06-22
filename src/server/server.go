@@ -2,7 +2,6 @@ package server
 
 import (
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/facebookgo/grace/gracehttp"
@@ -10,7 +9,6 @@ import (
 	"github.com/etherlabsio/healthcheck"
 
 	"github.com/Sirupsen/logrus"
-
 	"context"
 )
 
@@ -28,6 +26,7 @@ func SetLogger(loggers *logrus.Entry) {
 }
 
 func init() {
+	CockroachClient = SetupCockroachDB()
 
 }
 
@@ -45,6 +44,7 @@ func StartServer(Port string, loggers *logrus.Entry) {
 	//init log
 	SetLogger(loggers)
 
+
 	log.Info("Starting server")
 	s := NewServer(Port)
 	log.Info("Server starting --> " + Port)
@@ -55,8 +55,8 @@ func StartServer(Port string, loggers *logrus.Entry) {
 	)
 
 	if err != nil {
-		log.Fatalln("Error: %v", err)
-		os.Exit(0)
+		log.Error("Error: %v", err)
+		//os.Exit(0)
 	}
 
 }

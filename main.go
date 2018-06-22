@@ -7,15 +7,15 @@ import (
 
 	"github.com/Sirupsen/logrus"
 
-	"pscoin/src/server"
-	"pscoin/src/p2p"
 	"flag"
+	"pscoin/src/server"
 )
 
 var (
 	PORT     = os.Getenv("PORT")
 	APP_NAME = os.Getenv("APP_NAME")
 	log      *logrus.Entry
+	ipcpath  = ".demo.ipc"
 )
 
 func initLog() {
@@ -31,19 +31,12 @@ func init() {
 		PORT = "3010"
 	}
 
+	initLog()
+
 }
 
 func main() {
-	initLog()
-
-	defer handlePanic()
-
-	initBlockchain()
-
-	server.StartServer(PORT, log)
-}
-
-func initBlockchain() {
+	leader := flag.String("leader", "false", "Leader: true or false")
 	port := flag.Int("port", 30300, "Port")
 	host := flag.String("host", "0.0.0.0", "Host")
 
@@ -62,13 +55,34 @@ func initBlockchain() {
 		os.Exit(0)
 	}
 
-	p2p.InitP2PServer(*host, *port)
 
-	if *peerPort > 0 {
-		peers := p2p.GetPeers(*peerID, *peerHost, *peerPort)
-		p2p.InitP2PPeers(peers)
+	log.Info(leader)
+
+
+	// start cockroachdb
+
+
+	if *leader != "false" {
+		log.Info("Starting RPC")
+		os.Remove(ipcpath)
+		<-time.After(1 * time.Second)
+		rpcsrv := server.StartRPC()
+		defer func() {
+			rpcsrv.Stop()
+			os.Remove(ipcpath)
+		}()
 	}
+
+	server.InitP2p(*host, *port, *peerID, *peerHost, *peerPort)
+
+	defer func() {
+		handlePanic()
+	}()
+
+	server.StartServer(PORT, log)
+
 }
+
 
 func handlePanic() {
 	if r := recover(); r != nil {

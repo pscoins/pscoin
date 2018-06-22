@@ -43,7 +43,8 @@
     "p2p/discv5",
     "p2p/nat",
     "p2p/netutil",
-    "rlp"
+    "rlp",
+    "rpc"
   ]
   revision = "dea1ce052a10cd7d401a5c04f83f371a06fe293c"
   version = "v1.8.11"
@@ -132,6 +133,37 @@
   version = "v1.0.1"
 
 [[projects]]
+  name = "github.com/jinzhu/gorm"
+  packages = [
+    ".",
+    "dialects/postgres"
+  ]
+  revision = "6ed508ec6a4ecb3531899a69cbc746ccf65a4166"
+  version = "v1.9.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/jinzhu/inflection"
+  packages = ["."]
+  revision = "04140366298a54a039076d798123ffa108fff46c"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/lib/pq"
+  packages = [
+    ".",
+    "hstore",
+    "oid"
+  ]
+  revision = "90697d60dd844d5ef6ff15135d0203f65d2f53b8"
+
+[[projects]]
+  name = "github.com/rs/cors"
+  packages = ["."]
+  revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
+  version = "v1.4.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/syndtr/goleveldb"
   packages = [
@@ -162,7 +194,8 @@
   packages = [
     "html",
     "html/atom",
-    "html/charset"
+    "html/charset",
+    "websocket"
   ]
   revision = "db08ff08e8622530d9ed3a0e8ac279f6d4c02196"
 
@@ -199,9 +232,21 @@
   revision = "f21a4dfb5e38f5895301dc265a8def02365cc3d0"
   version = "v0.3.0"
 
+[[projects]]
+  name = "gopkg.in/fatih/set.v0"
+  packages = ["."]
+  revision = "57907de300222151a123d29255ed17f5ed43fad3"
+  version = "v0.1.0"
+
+[[projects]]
+  branch = "v2"
+  name = "gopkg.in/natefinch/npipe.v2"
+  packages = ["."]
+  revision = "c1b8fa8bdccecb0b8db834ee0b92fdbcfa606dd6"
+
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "6c7eb851e47ae31d0811316af989727316b1d928be9d052dcb80c0ad4e14a63a"
+  inputs-digest = "076b0b38287978de20c88a04b660d01ea64637c198f608d9311b5885e76ceeb4"
   solver-name = "gps-cdcl"
   solver-version = 1
