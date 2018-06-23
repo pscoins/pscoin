@@ -40,10 +40,6 @@ func main() {
 	port := flag.Int("port", 30300, "Port")
 	host := flag.String("host", "0.0.0.0", "Host")
 
-	peerPort := flag.Int("peerport", 0, "Peer Port")
-	peerHost := flag.String("peerhost", "0.0.0.0", "Peer Host")
-	peerID := flag.String("peerid", "1", "Peer Host")
-
 	help := flag.Bool("help", false, "Display Help")
 
 	flag.Parse()
@@ -59,9 +55,6 @@ func main() {
 	log.Info(leader)
 
 
-	// start cockroachdb
-
-
 	if *leader != "false" {
 		log.Info("Starting RPC")
 		os.Remove(ipcpath)
@@ -73,7 +66,7 @@ func main() {
 		}()
 	}
 
-	server.InitP2p(*host, *port, *peerID, *peerHost, *peerPort)
+	server.InitP2p(*host, *port)
 
 	defer func() {
 		handlePanic()

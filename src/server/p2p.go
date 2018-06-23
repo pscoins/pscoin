@@ -100,14 +100,7 @@ func randomID() (id discover.NodeID) {
 }
 
 func AddPeer(node *discover.Node) error {
-
-	//nodeID := randomID()
-
-	//log.Info(nodeID, net.ParseIP(dest), uint16(sourcePort), uint16(sourcePort))
-	//node := discover.NewNode(nodeID, net.ParseIP(dest), uint16(sourcePort), uint16(sourcePort))
-	//node := &discover.Node{IP: net.ParseIP(dest)}
-
-	log.Println("Going to connect ", node)
+	log.Info("Going to connect ", node)
 
 	// add it as a peer
 	// the connection and crypto handshake will be performed automatically
@@ -120,42 +113,50 @@ func AddPeer(node *discover.Node) error {
 }
 
 func InitP2PPeers(peers []model.PeerNode) {
-	log.Info("InitP2PPeers")
+	log.Infof("InitP2PPeers, total peers %d", len(peers))
 	for i, peer := range peers {
 
-		if &peer.Peer != nil {
+		if &peer.ID != nil {
 
-			err := AddPeer(peer.Peer)
+			peer, err := discover.ParseNode(peer.ID)
+
 			if err != nil {
 				log.WithField("method", "InitP2PPeers").
 					WithField("peer.ID", peer.ID).
-					WithField("peer.IP", peer.Peer.IP).
-					WithField("peer.TCP", peer.Peer.TCP).
-					WithField("peer.UDP", peer.Peer.UDP).
 					WithError(err).
 					Error("Failed to connect to peer")
 			} else {
 
-				eventOneC := make(chan *p2p.PeerEvent)
-				sub_one := srv.SubscribeEvents(eventOneC)
-				go func() {
-					for {
-						select {
-						case peerevent := <-eventOneC:
-							if peerevent.Type == "add" {
-								log.WithField("Type", peerevent.Type).WithField("Peer", peerevent.Peer).WithField("node", i).Info("Received peer add notification")
-							} else if peerevent.Type == "msgsend" {
-								log.WithField("Type", peerevent.Type).WithField("Event", peerevent).WithField("node", i).Info("Received message send notification")
-							} else if peerevent.Type == "drop" {
-								log.WithField("Type", peerevent.Type).WithField("Event", peerevent).WithField("node", i).Error("Received DROP message")
-							} else {
-								log.WithField("Type", peerevent.Type).WithField("Event", peerevent).WithField("node", i).Info("Received message")
+				err = AddPeer(peer)
+				if err != nil {
+					log.WithField("method", "InitP2PPeers").
+						WithField("peer.ID", peer.ID).
+						WithError(err).
+						Error("Failed to connect to peer")
+				} else {
+
+					eventOneC := make(chan *p2p.PeerEvent)
+					sub_one := srv.SubscribeEvents(eventOneC)
+					go func() {
+
+						for {
+							select {
+							case peerevent := <-eventOneC:
+								if peerevent.Type == "add" {
+									log.WithField("Type", peerevent.Type).WithField("Peer", peerevent.Peer).WithField("node", i).Info("Received peer add notification")
+								} else if peerevent.Type == "msgsend" {
+									log.WithField("Type", peerevent.Type).WithField("Event", peerevent).WithField("node", i).Info("Received message send notification")
+								} else if peerevent.Type == "drop" {
+									log.WithField("Type", peerevent.Type).WithField("Event", peerevent).WithField("node", i).Error("Received DROP message")
+								} else {
+									log.WithField("Type", peerevent.Type).WithField("Event", peerevent).WithField("node", i).Info("Received message")
+								}
+							case <-sub_one.Err():
+								return
 							}
-						case <-sub_one.Err():
-							return
 						}
-					}
-				}()
+					}()
+				}
 			}
 		} else {
 			log.WithField("method", "InitP2PPeers").
@@ -204,7 +205,7 @@ func InitP2PServer(dest string, sourcePort int) (*p2p.Server, error) {
 
 }
 
-func InitP2p(host string, port int, peerID, peerHost string, peerPort int) {
+func InitP2p(host string, port int) {
 
 	srv, err := InitP2PServer(host, port)
 	if err != nil {
@@ -218,11 +219,10 @@ func InitP2p(host string, port int, peerID, peerHost string, peerPort int) {
 
 	targetObject := model.PeerNode{
 		ID:       srv_node.String(),
-		Peer:     srv_node,
 		LastSeen: time.Now(),
 	}
 
-	CockroachClient.Save(targetObject)
+	CockroachClient.Save(&targetObject)
 
 	var peerNodes []model.PeerNode
 	//get all peers except yourself
