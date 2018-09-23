@@ -2,13 +2,13 @@ package server
 
 import (
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
+	"github.com/pscoins/go-ethereum/crypto"
 	"github.com/ethereum/go-ethereum/p2p"
 	"github.com/ethereum/go-ethereum/p2p/discover"
 	"time"
 	"math/rand"
 	"strconv"
-	"github.com/ethereum/go-ethereum/common"
+	"github.com/pscoins/go-ethereum/common"
 	"pscoin/src/model"
 )
 
@@ -185,7 +185,7 @@ func InitP2PServer(dest string, sourcePort int) (*p2p.Server, error) {
 
 	srv = &p2p.Server{
 		Config: p2p.Config{
-			MaxPeers:        10,
+			MaxPeers:        19,
 			PrivateKey:      nodekey,
 			Name:            common.MakeName("pscoin node "+strconv.Itoa(sourcePort), "1"),
 			ListenAddr:      strCon,

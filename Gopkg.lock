@@ -20,7 +20,7 @@
   revision = "86fed781132ac890ee03e906e4ecd5d6fa180c64"
 
 [[projects]]
-  name = "github.com/ethereum/go-ethereum"
+  name = "github.com/pscoins/go-ethereum"
   packages = [
     "common",
     "common/hexutil",
@@ -247,6 +247,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "076b0b38287978de20c88a04b660d01ea64637c198f608d9311b5885e76ceeb4"
+  inputs-digest = "4815ea80645e432194ad27e140018c9274894705467515c11f757bc97fac792e"
   solver-name = "gps-cdcl"
   solver-version = 1

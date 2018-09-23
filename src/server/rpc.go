@@ -3,7 +3,7 @@ package server
 import (
 	"fmt"
 	"net"
-	"github.com/ethereum/go-ethereum/rpc"
+	"github.com/pscoins/go-ethereum/rpc"
 
 	"time"
 	"os"

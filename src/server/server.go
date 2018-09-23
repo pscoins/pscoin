@@ -26,7 +26,6 @@ func SetLogger(loggers *logrus.Entry) {
 }
 
 func init() {
-	CockroachClient = SetupCockroachDB()
 
 }
 
@@ -41,6 +40,9 @@ func NewServer(Port string) *http.Server {
 
 //StartServer start and listen @server
 func StartServer(Port string, loggers *logrus.Entry) {
+	CockroachClient = SetupCockroachDB()
+
+
 	//init log
 	SetLogger(loggers)
 
